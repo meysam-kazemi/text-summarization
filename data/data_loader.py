@@ -1,17 +1,18 @@
 import os
+import sys
 from datasets import load_dataset
-from src.utils import read_config
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
+from utils import read_config
 
 
 class DataLoader:
-    def __init__(self, config, language_code):
+    def __init__(self, config):
         """
         Initialize the DataLoader with the dataset name, language code, and local path.
         :param language_code: Language code ("es" for Spanish, "en" for English)
         """
         self.dataset_name = config["dataset"]['dataset_name']
         self.local_data_path = config["dataset"]['local_data_path']
-        self.language_code = language_code
 
     def load_data(self):
         """
@@ -23,7 +24,7 @@ class DataLoader:
             print(f"Loading data from {self.local_data_path}...")
             return self._load_local_data()
         else:
-            print(f"Data not found locally. Downloading {self.dataset_name} ({self.language_code})...")
+            print(f"Data not found locally. Downloading {self.dataset_name}...")
             dataset = self._download_data()
             self._save_local_data(dataset)
             return dataset
@@ -42,7 +43,7 @@ class DataLoader:
 
         :return: Dataset object containing the downloaded data
         """
-        return load_dataset(self.dataset_name, self.language_code)
+        return load_dataset(self.dataset_name)
 
     def _save_local_data(self, dataset):
         """
@@ -58,20 +59,12 @@ class DataLoader:
 if __name__ == "__main__":
     # Define parameters
     config = read_config()
-    spanish_code = "es"
-    english_code = "en"
-    
-    # Define local paths
-    spanish_local_path = "data/raw/spanish_dataset"
-    english_local_path = "data/raw/english_dataset"
 
     # Create instances of DataLoader
-    spanish_data_loader = DataLoader(config, spanish_code)
-    english_data_loader = DataLoader(config, english_code)
+    data_loader = DataLoader(config)
     
     # Load the datasets
-    spanish_dataset = spanish_data_loader.load_data()
-    english_dataset = english_data_loader.load_data()
+    dataset = data_loader.load_data()
     
     # Display the first few entries of the English dataset
-    print(english_dataset)
+    print(dataset)
