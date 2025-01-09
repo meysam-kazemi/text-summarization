@@ -1,8 +1,6 @@
 import os
-import sys
 from datasets import load_dataset
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from utils import read_config
+from src.utils import read_config
 
 
 class DataLoader:
@@ -68,8 +66,8 @@ if __name__ == "__main__":
     english_local_path = "data/raw/english_dataset"
 
     # Create instances of DataLoader
-    spanish_data_loader = DataLoader(config=config, spanish_code)
-    english_data_loader = DataLoader(config=config, english_code)
+    spanish_data_loader = DataLoader(config, spanish_code)
+    english_data_loader = DataLoader(config, english_code)
     
     # Load the datasets
     spanish_dataset = spanish_data_loader.load_data()
