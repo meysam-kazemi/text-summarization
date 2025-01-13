@@ -1,8 +1,8 @@
 import os
 import sys
 from datasets import load_dataset
-sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
-from utils import read_config
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from src.utils import read_config
 
 
 class DataLoader:
