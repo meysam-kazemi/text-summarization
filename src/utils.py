@@ -28,3 +28,5 @@ def read_config(config_file='config.ini'):
     config_dict = {section: dict(config.items(section)) for section in config.sections()}
     
     return config_dict
+
+
