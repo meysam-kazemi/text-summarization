@@ -5,6 +5,7 @@ from accelerate import Accelerator
 from transformers import get_scheduler, DataCollatorForSeq2Seq
 from tqdm.auto import tqdm
 import torch
+import numpy as np
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.model_and_tokenizer import modelAndTokenizer
@@ -30,6 +31,7 @@ preprocess = Preprocess(
 num_train_epochs = int(config['train']['epoch'])
 batch_size = int(config['train']['batch_size'])
 learning_rate = float(config['train']['learning_rate'])
+output_dir = config['model']['save_dir']
 
 tokenized_datasets = preprocess(data)
 
@@ -76,11 +78,11 @@ lr_scheduler = get_scheduler(
 # --------------
 
 progress_bar = tqdm(range(num_training_steps))
-output_dir = config['model']['save_dir']
+
 for epoch in range(num_train_epochs):
     # Training
     model.train()
-    for batch in train_dataloader:
+    for step, batch in enumerate(train_dataloader):
         outputs = model(**batch)
         loss = outputs.loss
         accelerator.backward(loss)
@@ -92,31 +94,47 @@ for epoch in range(num_train_epochs):
 
     # Evaluation
     model.eval()
-    for batch in eval_dataloader:
+    for step, batch in enumerate(eval_dataloader):
         with torch.no_grad():
-            outputs = model(**batch)
+            generated_tokens = accelerator.unwrap_model(model).generate(
+                batch["input_ids"],
+                attention_mask=batch["attention_mask"],
+            )
 
-        predictions = outputs.logits.argmax(dim=-1)
-        labels = batch["labels"]
+            generated_tokens = accelerator.pad_across_processes(
+                generated_tokens, dim=1, pad_index=mt.tokenizer.pad_token_id
+            )
+            labels = batch["labels"]
 
-        # Necessary to pad predictions and labels for being gathered
-        predictions = accelerator.pad_across_processes(predictions, dim=1, pad_index=-100)
-        labels = accelerator.pad_across_processes(labels, dim=1, pad_index=-100)
+            # If we did not pad to max length, we need to pad the labels too
+            labels = accelerator.pad_across_processes(
+                batch["labels"], dim=1, pad_index=mt.tokenizer.pad_token_id
+            )
 
-        predictions_gathered = accelerator.gather(predictions)
-        labels_gathered = accelerator.gather(labels)
+            generated_tokens = accelerator.gather(generated_tokens).cpu().numpy()
+            labels = accelerator.gather(labels).cpu().numpy()
 
-        true_predictions, true_labels = mt.postprocess(predictions_gathered, labels_gathered)
-        mt.eval.add_batch(predictions=true_predictions, references=true_labels)
+            # Replace -100 in the labels as we can't decode them
+            labels = np.where(labels != -100, labels, mt.tokenizer.pad_token_id)
+            if isinstance(generated_tokens, tuple):
+                generated_tokens = generated_tokens[0]
+            decoded_preds = mt.tokenizer.batch_decode(
+                generated_tokens, skip_special_tokens=True
+            )
+            decoded_labels = mt.tokenizer.batch_decode(labels, skip_special_tokens=True)
 
-    results = mt.eval.compute()
-    print(
-        f"epoch {epoch}:",
-        {
-            key: results[f"overall_{key}"]
-            for key in ["precision", "recall", "f1", "accuracy"]
-        },
-    )
+            decoded_preds, decoded_labels = postprocess_text(
+                decoded_preds, decoded_labels
+            )
+
+            metrics.rouge_score.add_batch(predictions=decoded_preds, references=decoded_labels)
+
+    # Compute metrics
+    result = metrics.rouge_score.compute()
+    # Extract the median ROUGE scores
+    result = {key: value.mid.fmeasure * 100 for key, value in result.items()}
+    result = {k: round(v, 4) for k, v in result.items()}
+    print(f"Epoch {epoch}:", result)
 
     # Save and upload
     accelerator.wait_for_everyone()
