@@ -46,7 +46,7 @@ class Preprocess:
     def _preprocess_func(self, examples):
         model_inputs = self.tokenizer(
             examples["article"],
-            max_length=self.max_input_length
+            max_length=self.max_input_length,
             truncation=True,
         )
         labels = self.tokenizer(
@@ -88,3 +88,14 @@ class Metrics:
         # Extract the median scores
         result = {key: value.mid.fmeasure * 100 for key, value in result.items()}
         return {k: round(v, 4) for k, v in result.items()}
+    
+
+def postprocess_text(preds, labels):
+    preds = [pred.strip() for pred in preds]
+    labels = [label.strip() for label in labels]
+
+    # ROUGE expects a newline after each sentence
+    preds = ["\n".join(sent_tokenize(pred)) for pred in preds]
+    labels = ["\n".join(sent_tokenize(label)) for label in labels]
+
+    return preds, labels
