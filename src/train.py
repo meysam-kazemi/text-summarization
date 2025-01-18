@@ -11,7 +11,7 @@ from src.model_and_tokenizer import modelTokenizer
 from data.data_loader import data_loader
 from src.utils import (
     read_config,
-    preProcessingTokens,
+    preprocess,
     postprocess,
 )
 
@@ -19,10 +19,15 @@ from src.utils import (
 config = read_config()
 data = data_loader(config)
 mt = modelTokenizer(config)
-preprocess = preProcessingTokens(tokenizer=mt.tokenizer)
-tokenized_datasets = preprocess.tokenize_datasets(data)
+preprocess = preprocess(
+    mt.tokenizer,
+    config['preprocess']['max_input_length'],
+    config['preprocess']['max_target_length'],
+)
 
+tokenized_datasets = preprocess(data)
 
+#########################################################3
 
 train_dataloader = DataLoader(
     tokenized_datasets["train"],

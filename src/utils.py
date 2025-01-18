@@ -52,16 +52,16 @@ class preprocess:
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
     
+    def map_preprocess_func(self, examples):
+        return self._preprocess_func(
+            examples,
+            self.tokenizer,
+            self.max_input_length,
+            self.max_target_length,
+        )
+    
     def __call__(self, dataset):
-        return dataset.map(
-            lambda a: self._preprocess_func(
-                a,
-                self.tokenizer,
-                self.max_input_length,
-                self.max_target_length,
-                ) ,
-            batched=True
-            )
+        return dataset.map(self.map_preprocess_func, batched=True)
 
 def compute_metrics(eval_pred):
     predictions, labels = eval_pred
