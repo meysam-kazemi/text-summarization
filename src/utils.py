@@ -31,7 +31,7 @@ def read_config(config_file='config.ini'):
     
     return config_dict
 
-class preprocess:
+class Preprocess:
     def __init__(
         self,
         tokenizer,
@@ -55,8 +55,13 @@ class preprocess:
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
     
-    def __call__(self, dataset):
+    def _tokenize_data(self, dataset):
         return dataset.map(self._preprocess_func, batched=True)
+    
+    def __call__(self, dataset):
+        tokenized_datasets = self._tokenize_data(dataset)
+        tokenized_datasets.set_format("torch")
+        return tokenized_datasets
 
 
 
