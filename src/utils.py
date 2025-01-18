@@ -32,16 +32,13 @@ def read_config(config_file='config.ini'):
 def preprocess(
     examples,
     tokenizer,
-    max_input_length,
-    max_target_length
     ):
     model_inputs = tokenizer(
         examples["article"],
-        max_length=max_input_length,
         truncation=True,
     )
     labels = tokenizer(
-        examples["abstract"], max_length=max_target_length, truncation=True
+        examples["abstract"], truncation=True
     )
     model_inputs["labels"] = labels["input_ids"]
     return model_inputs
