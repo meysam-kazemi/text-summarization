@@ -32,6 +32,8 @@ def read_config(config_file='config.ini'):
 def preprocess(
     examples,
     tokenizer,
+    max_input_length,
+    max_target_length
     ):
     model_inputs = tokenizer(
         examples["article"],
