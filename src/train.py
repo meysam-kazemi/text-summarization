@@ -8,17 +8,17 @@ import torch
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.model_and_tokenizer import modelAndTokenizer
-from data.data_loader import data_loader
+from data.data_loader import dataLoader
 from src.utils import (
     read_config,
-    Preprocess,
+    Preprocess,dataLoader
     Metrics,
     postprocess_text
 )
 
 
 config = read_config()
-data = data_loader(config)
+data = dataLoader(config)
 mt = modelAndTokenizer(config)
 metrics = Metrics(mt.tokenizer)
 preprocess = Preprocess(

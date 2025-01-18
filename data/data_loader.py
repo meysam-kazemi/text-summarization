@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.utils import read_config
 
 
-class DataLoader:
+class dataLoader:
     def __init__(self, config):
         """
         Initialize the DataLoader with the dataset name, language code, and local path.
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     config = read_config()
 
     # Create instances of DataLoader
-    data_loader = DataLoader(config)
+    data_loader = dataLoader(config)
     
     # Load the datasets
     dataset = data_loader.load_data()
