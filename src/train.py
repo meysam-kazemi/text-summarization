@@ -2,7 +2,7 @@ import os
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from accelerate import Accelerator
-from transformers import get_scheduler
+from transformers import get_scheduler, DataCollatorForSeq2Seq
 from tqdm.auto import tqdm
 import torch
 import sys
@@ -11,29 +11,44 @@ from src.model_and_tokenizer import modelTokenizer
 from data.data_loader import data_loader
 from src.utils import (
     read_config,
-    preprocess,
-    postprocess,
+    Preprocess,
+    Metrics,
 )
 
 
 config = read_config()
 data = data_loader(config)
 mt = modelTokenizer(config)
-preprocess = preprocess(
+metrics = Metrics(mt.tokenizer)
+preprocess = Preprocess(
     mt.tokenizer,
-    config['preprocess']['max_input_length'],
-    config['preprocess']['max_target_length'],
+    int(config['preprocess']['max_input_length']),
+    int(config['preprocess']['max_target_length']),
 )
+
+num_train_epochs = int(config['train']['epoch'])
+batch_size = int(config['train']['batch_size'])
+learning_rate = float(config['train']['learning_rate'])
 
 tokenized_datasets = preprocess(data)
 
-#########################################################3
+
+data_collator = DataCollatorForSeq2Seq(mt.tokenizer, model=mt.model)
 
 train_dataloader = DataLoader(
     tokenized_datasets["train"],
-    shuffle=True,tokenize_datasets
+    shuffle=True,
+    collate_fn=data_collator,
+    batch_size=batch_size,
+)
+eval_dataloader = DataLoader(
+    tokenized_datasets["validation"],
+    collate_fn=data_collator,
+    batch_size=batch_size
+)
 
-optimizer = AdamW(mt.model.parameters(), lr=2e-5)
+
+optimizer = AdamW(mt.model.parameters(), lr=learning_rate)
 
 
 accelerator = Accelerator()
@@ -42,7 +57,6 @@ model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
 )
 
 
-num_train_epochs = 3
 num_update_steps_per_epoch = len(train_dataloader)
 num_training_steps = num_train_epochs * num_update_steps_per_epoch
 
@@ -52,6 +66,9 @@ lr_scheduler = get_scheduler(
     num_warmup_steps=0,
     num_training_steps=num_training_steps,
 )
+
+#########################################################3
+
 
 # --------------
 ## Training loop
