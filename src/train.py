@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 import torch
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from src.model_and_tokenizer import modelTokenizer
+from src.model_and_tokenizer import modelAndTokenizer
 from data.data_loader import data_loader
 from src.utils import (
     read_config,
@@ -19,7 +19,7 @@ from src.utils import (
 
 config = read_config()
 data = data_loader(config)
-mt = modelTokenizer(config)
+mt = modelAndTokenizer(config)
 metrics = Metrics(mt.tokenizer)
 preprocess = Preprocess(
     mt.tokenizer,
