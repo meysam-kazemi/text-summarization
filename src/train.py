@@ -19,7 +19,8 @@ from src.utils import (
 
 
 config = read_config()
-data = dataLoader(config)
+data_loader = dataLoader(config)
+data = data_loader.load_data()
 mt = modelAndTokenizer(config)
 metrics = Metrics(mt.tokenizer)
 preprocess = Preprocess(
