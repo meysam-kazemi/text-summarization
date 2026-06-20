@@ -12,7 +12,7 @@ from src.model_and_tokenizer import modelAndTokenizer
 from data.data_loader import dataLoader
 from src.utils import (
     read_config,
-    Preprocess,dataLoader
+    Preprocess,
     Metrics,
     postprocess_text
 )
